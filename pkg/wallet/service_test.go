@@ -178,7 +178,7 @@ func TestService_Reject_success(t *testing.T) {
 }
 
 func TestService_Repeat_success(t *testing.T) {
-	// создаем сервис
+
 	s := newTestService()
 
 	_, payments, err := s.addAcoount(defaultTestAccount)
