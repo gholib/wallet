@@ -59,7 +59,6 @@ func (s *Service) Deposit(accountID int64, amount types.Money) error {
 		return ErrAccountNotFound
 	}
 
-	// зачисление средств пока не рассматриваем как платёж
 	account.Balance += amount
 	return nil
 }
