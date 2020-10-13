@@ -2,6 +2,9 @@ package wallet
 
 import (
 	"errors"
+	"log"
+	"os"
+	"strconv"
 
 	"github.com/gholib/wallet/pkg/types"
 	"github.com/google/uuid"
@@ -165,4 +168,32 @@ func (s *Service) PayFromFavorite(favoriteID string) (*types.Payment, error) {
 	}
 
 	return s.Pay(favorite.AccountID, favorite.Amount, favorite.Category)
+}
+func (s *Service) ExportToFile(path string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Print(err)
+		}
+
+	}()
+	str := ""
+	for _, account := range s.accounts {
+		str += strconv.Itoa(int(account.ID)) + ";"
+		str += string(account.Phone) + ";"
+		str += strconv.Itoa(int(account.Balance)) + "|"
+	}
+
+	_, err = file.Write([]byte(str))
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
 }
