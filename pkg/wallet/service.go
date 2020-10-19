@@ -674,9 +674,15 @@ func (s *Service) SumPayments(goroutines int) types.Money {
 			}
 		}(s.payments)
 	} else {
-		iterator := 0
-		for i := 0; i < goroutines; i++ {
+		from := 0
+		count := len(s.payments) / goroutines
+		for i := 1; i <= goroutines; i++ {
 			wg.Add(1)
+			last := len(s.payments) - i*count
+			if last == 1 {
+				last = 0
+			}
+			to := len(s.payments) - last
 			go func(payments []*types.Payment) {
 				defer wg.Done()
 				s := types.Money(0)
@@ -686,8 +692,8 @@ func (s *Service) SumPayments(goroutines int) types.Money {
 				mu.Lock()
 				defer mu.Unlock()
 				summ += s
-			}(s.payments[iterator : i+1])
-			iterator += goroutines
+			}(s.payments[from:to])
+			from += count
 		}
 	}
 
