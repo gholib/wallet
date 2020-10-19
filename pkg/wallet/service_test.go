@@ -341,7 +341,7 @@ func BenchmarkSumPayments(b *testing.B) {
 
 	_, _, err := s.addAcoount(testAccount{
 		phone:   "+992935444994",
-		balance: 30_000_00,
+		balance: 1000_000_00,
 		payments: []struct {
 			amount   types.Money
 			category types.PaymentCategory
@@ -371,7 +371,15 @@ func BenchmarkSumPayments(b *testing.B) {
 				category: "auto",
 			},
 			{
-				amount:   7000_00,
+				amount:   1250_00,
+				category: "auto",
+			},
+			{
+				amount:   1870_00,
+				category: "auto",
+			},
+			{
+				amount:   9877_00,
 				category: "auto",
 			},
 		},
@@ -382,10 +390,10 @@ func BenchmarkSumPayments(b *testing.B) {
 		return
 	}
 
-	want := types.Money(2800000)
+	want := types.Money(3399700)
 
 	for i := 0; i < b.N; i++ {
-		result := s.SumPayments(2)
+		result := s.SumPayments(1)
 		if result != want {
 			b.Fatalf("invalid result, got = %v want = %v", result, want)
 		}
