@@ -28,6 +28,7 @@ var ErrNotEnoughBalance = errors.New("not enough balance")
 var ErrPaymentNotFound = errors.New("payment not found")
 var ErrFavoriteNotFound = errors.New("favorite not found")
 var ErrFileNotFound = errors.New("File Not found")
+var Err = errors.New("gavno")
 
 //Service -
 type Service struct {
@@ -588,5 +589,70 @@ func (s *Service) actionByFavorites(path string) error {
 		log.Println(ErrFileNotFound.Error())
 	}
 
+	return nil
+}
+
+func (s *Service) ExportAccountHistory(accountID int64) ([]types.Payment, error) {
+	_, err := s.FindAccountByID(accountID)
+	if err != nil {
+		return nil, ErrAccountNotFound
+	}
+	accountPayments := []types.Payment{}
+
+	for _, payment := range s.payments {
+		if payment.AccountID == accountID {
+			accountPayments = append(accountPayments, types.Payment{
+				ID:        payment.ID,
+				AccountID: payment.AccountID,
+				Amount:    payment.Amount,
+				Category:  payment.Category,
+				Status:    payment.Status,
+			})
+		}
+	}
+
+	return accountPayments, nil
+}
+
+func (s *Service) HistoryToFiles(payments []types.Payment, dir string, records int) error {
+	if len(payments) <= records {
+		exportPayments(payments, dir+"/payments.dump")
+		return nil
+	}
+	var iterator int32 = 1
+	count := 0
+	for i := 1; i <= len(payments); i++ {
+		strIterator := string(iterator)
+		dir = dir + "/payments" + strIterator + ".dump"
+		if i == len(payments) && i-count != records {
+			exportPayments(payments[count:i], dir)
+		}
+
+		if i-count == records {
+			exportPayments(payments[count:i], dir)
+			count += records
+			iterator++
+		}
+	}
+	return nil
+}
+
+func exportPayments(payments []types.Payment, path string) error {
+	pay := ""
+
+	for _, payment := range payments {
+
+		pay += payment.ID + ";"
+		pay += strconv.Itoa(int(payment.AccountID)) + ";"
+		pay += strconv.Itoa(int(payment.Amount)) + ";"
+		pay += string(payment.Category) + ";"
+		pay += string(payment.Status) + ";"
+		pay += "\n"
+	}
+	err := WriteToFile(path, pay)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
 	return nil
 }

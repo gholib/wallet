@@ -289,3 +289,47 @@ func TestService_Import_success(t *testing.T) {
 		t.Errorf("Import() Error can't import error = %v", err)
 	}
 }
+
+func TestService_HistoryToFiles_success(t *testing.T) {
+	s := newTestService()
+
+	_, _, err := s.addAcoount(defaultTestAccount)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	_, _, err = s.addAcoount(testAccount{
+		phone:   "+992935444994",
+		balance: 10_000_00,
+		payments: []struct {
+			amount   types.Money
+			category types.PaymentCategory
+		}{{
+			amount:   1000_00,
+			category: "auto",
+		}, {
+			amount:   1020_00,
+			category: "auto",
+		}},
+	})
+
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	payments, err := s.ExportAccountHistory(2)
+	// t.Error(payments[1:2])
+	// t.Error(payments)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = s.HistoryToFiles(payments, "data", 1)
+	if err != nil {
+		t.Errorf("HistoryToFiles() Error can't export to file, error = %v", err)
+		return
+	}
+}
