@@ -679,7 +679,7 @@ func (s *Service) SumPayments(goroutines int) types.Money {
 		for i := 1; i <= goroutines; i++ {
 			wg.Add(1)
 			last := len(s.payments) - i*count
-			if last == 1 {
+			if i == goroutines {
 				last = 0
 			}
 			to := len(s.payments) - last

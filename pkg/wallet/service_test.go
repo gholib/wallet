@@ -393,7 +393,7 @@ func BenchmarkSumPayments(b *testing.B) {
 	want := types.Money(3399700)
 
 	for i := 0; i < b.N; i++ {
-		result := s.SumPayments(1)
+		result := s.SumPayments(6)
 		if result != want {
 			b.Fatalf("invalid result, got = %v want = %v", result, want)
 		}
