@@ -701,3 +701,60 @@ func (s *Service) SumPayments(goroutines int) types.Money {
 
 	return summ
 }
+
+func (s *Service) FilterPayments(accountID int64, goroutines int) ([]types.Payment, error) {
+	filteredPayments := []types.Payment{}
+	wg := sync.WaitGroup{}
+	mu := sync.Mutex{}
+	if goroutines == 0 || goroutines == 1 {
+		wg.Add(1)
+		go func(payments []*types.Payment) {
+			defer wg.Done()
+			for _, payment := range payments {
+				if payment.AccountID == accountID {
+					filteredPayments = append(filteredPayments, types.Payment{
+						ID:        payment.ID,
+						AccountID: payment.AccountID,
+						Amount:    payment.Amount,
+						Category:  payment.Category,
+						Status:    payment.Status,
+					})
+				}
+			}
+		}(s.payments)
+	} else {
+		from := 0
+		count := len(s.payments) / goroutines
+		for i := 1; i <= goroutines; i++ {
+			wg.Add(1)
+			last := len(s.payments) - i*count
+			if i == goroutines {
+				last = 0
+			}
+			to := len(s.payments) - last
+			go func(payments []*types.Payment) {
+				defer wg.Done()
+				separetePayments := []types.Payment{}
+				for _, payment := range payments {
+					if payment.AccountID == accountID {
+						separetePayments = append(separetePayments, types.Payment{
+							ID:        payment.ID,
+							AccountID: payment.AccountID,
+							Amount:    payment.Amount,
+							Category:  payment.Category,
+							Status:    payment.Status,
+						})
+					}
+				}
+				mu.Lock()
+				defer mu.Unlock()
+				filteredPayments = append(filteredPayments, separetePayments...)
+			}(s.payments[from:to])
+			from += count
+		}
+	}
+
+	wg.Wait()
+
+	return filteredPayments, nil
+}
