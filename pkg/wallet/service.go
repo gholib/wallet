@@ -619,17 +619,17 @@ func (s *Service) HistoryToFiles(payments []types.Payment, dir string, records i
 		exportPayments(payments, dir+"/payments.dump")
 		return nil
 	}
-	var iterator int32 = 1
+	var iterator int = 1
 	count := 0
 	for i := 1; i <= len(payments); i++ {
-		strIterator := string(iterator)
-		dir = dir + "/payments" + strIterator + ".dump"
+		strIterator := strconv.Itoa(iterator)
+		fileName := dir + "/payments" + strIterator + ".dump"
 		if i == len(payments) && i-count != records {
-			exportPayments(payments[count:i], dir)
+			exportPayments(payments[count:i], fileName)
 		}
 
 		if i-count == records {
-			exportPayments(payments[count:i], dir)
+			exportPayments(payments[count:i], fileName)
 			count += records
 			iterator++
 		}

@@ -311,7 +311,11 @@ func TestService_HistoryToFiles_success(t *testing.T) {
 		}, {
 			amount:   1020_00,
 			category: "auto",
-		}},
+		},
+			{
+				amount:   1030_00,
+				category: "auto",
+			}},
 	})
 
 	if err != nil {
@@ -320,14 +324,12 @@ func TestService_HistoryToFiles_success(t *testing.T) {
 	}
 
 	payments, err := s.ExportAccountHistory(2)
-	// t.Error(payments[1:2])
-	// t.Error(payments)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	err = s.HistoryToFiles(payments, "data", 1)
+	err = s.HistoryToFiles(payments, "data", 2)
 	if err != nil {
 		t.Errorf("HistoryToFiles() Error can't export to file, error = %v", err)
 		return
