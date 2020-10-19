@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/gholib/wallet/pkg/types"
 	"github.com/google/uuid"
@@ -658,4 +659,39 @@ func exportPayments(payments []types.Payment, path string) error {
 		return err
 	}
 	return nil
+}
+
+func (s *Service) SumPayments(goroutines int) types.Money {
+	wg := sync.WaitGroup{}
+	mu := sync.Mutex{}
+	var summ types.Money = 0
+	if goroutines == 0 || goroutines == 1 {
+		wg.Add(1)
+		go func(payments []*types.Payment) {
+			defer wg.Done()
+			for _, payment := range payments {
+				summ += payment.Amount
+			}
+		}(s.payments)
+	} else {
+		iterator := 0
+		for i := 0; i < goroutines; i++ {
+			wg.Add(1)
+			go func(payments []*types.Payment) {
+				defer wg.Done()
+				s := types.Money(0)
+				for _, payment := range payments {
+					s += payment.Amount
+				}
+				mu.Lock()
+				defer mu.Unlock()
+				summ += s
+			}(s.payments[iterator : i+1])
+			iterator += goroutines
+		}
+	}
+
+	wg.Wait()
+
+	return summ
 }
