@@ -1,7 +1,9 @@
 package wallet
 
 import (
+	"bufio"
 	"errors"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -238,4 +240,321 @@ func (s *Service) ImportFromFile(path string) error {
 
 	return nil
 
+}
+
+func (s *Service) Export(dir string) error {
+	if len(s.accounts) > 0 {
+		err := s.ExportAccounts(dir)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(s.payments) > 0 {
+		err := s.ExportPayments(dir)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(s.favorites) > 0 {
+		err := s.ExportFavorites(dir)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) ExportAccounts(dir string) error {
+	str := ""
+	for _, account := range s.accounts {
+		str += strconv.Itoa(int(account.ID)) + ";"
+		str += string(account.Phone) + ";"
+		str += strconv.Itoa(int(account.Balance)) + ";"
+		str += string('\n')
+	}
+
+	err := WriteToFile(dir+"/accounts.dump", str)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) ExportPayments(dir string) error {
+	str := ""
+	for _, payment := range s.payments {
+		str += payment.ID + ";"
+		str += strconv.Itoa(int(payment.AccountID)) + ";"
+		str += strconv.Itoa(int(payment.Amount)) + ";"
+		str += string(payment.Category) + ";"
+		str += string(payment.Status) + ";"
+		str += string('\n')
+	}
+
+	err := WriteToFile(dir+"/payments.dump", str)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) ExportFavorites(dir string) error {
+	str := ""
+	for _, favorite := range s.favorites {
+		str += favorite.ID + ";"
+		str += strconv.Itoa(int(favorite.AccountID)) + ";"
+		str += strconv.Itoa(int(favorite.Amount)) + ";"
+		str += string(favorite.Name) + ";"
+		str += string(favorite.Category) + ";"
+		str += string('\n')
+	}
+
+	err := WriteToFile(dir+"/favorites.dump", str)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) Import(dir string) error {
+	err := s.ImportAccounts(dir + "/accounts.dump")
+	log.Println(s.accounts)
+	if err != nil {
+		return err
+	}
+
+	err = s.ImportPayments(dir + "/payments.dump")
+	log.Println(s.payments)
+	if err != nil {
+		return err
+	}
+
+	err = s.ImportFavorites(dir + "/favorites.dump")
+	log.Println(s.favorites)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Service) ImportAccounts(path string) error {
+
+	src, err := os.Open(path)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	defer func() {
+		if cerr := src.Close(); cerr != nil {
+			log.Print(cerr)
+		}
+	}()
+	reader := bufio.NewReader(src)
+	for {
+		line, err := reader.ReadString('\n')
+		if err == io.EOF {
+			log.Print(line)
+			break
+		}
+		if err != nil {
+			log.Print(line)
+			break
+		}
+
+		data := strings.Split(line, ";")
+
+		id, err := strconv.Atoi(data[0])
+		if err != nil {
+			log.Println("can't parse str to int")
+			return err
+		}
+
+		phone := types.Phone(data[1])
+
+		balance, err := strconv.Atoi(data[2])
+		if err != nil {
+			log.Println("can't parse str to int")
+			return err
+		}
+
+		account, err := s.FindAccountByID(int64(id))
+		if err != nil {
+			acc, err := s.RegisterAccount(phone)
+			if err != nil {
+				log.Println("err from register account")
+				return err
+			}
+
+			acc.Balance = types.Money(balance)
+		} else {
+			account.Phone = phone
+			account.Balance = types.Money(balance)
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) ImportPayments(path string) error {
+	src, err := os.Open(path)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	defer func() {
+		if cerr := src.Close(); cerr != nil {
+			log.Print(cerr)
+		}
+	}()
+	reader := bufio.NewReader(src)
+	for {
+		line, err := reader.ReadString('\n')
+		if err == io.EOF {
+			log.Print(line)
+			break
+		}
+		if err != nil {
+			log.Print(line)
+			break
+		}
+
+		data := strings.Split(line, ";")
+		id := data[0]
+
+		accountID, err := strconv.Atoi(data[1])
+		if err != nil {
+			log.Println("can't parse str to int")
+			return err
+		}
+
+		amount, err := strconv.Atoi(data[2])
+		if err != nil {
+			log.Println("can't parse str to int")
+			return err
+		}
+
+		category := types.PaymentCategory(data[3])
+
+		status := types.PaymentStatus(data[4])
+
+		payment, err := s.FindPaymentByID(id)
+		if err != nil {
+			newPayment := &types.Payment{
+				ID:        id,
+				AccountID: int64(accountID),
+				Amount:    types.Money(amount),
+				Category:  types.PaymentCategory(category),
+				Status:    types.PaymentStatus(status),
+			}
+
+			s.payments = append(s.payments, newPayment)
+		} else {
+			payment.AccountID = int64(accountID)
+			payment.Amount = types.Money(amount)
+			payment.Category = category
+			payment.Status = status
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) ImportFavorites(path string) error {
+	src, err := os.Open(path)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	defer func() {
+		if cerr := src.Close(); cerr != nil {
+			log.Print(cerr)
+		}
+	}()
+	reader := bufio.NewReader(src)
+	for {
+		line, err := reader.ReadString('\n')
+		if err == io.EOF {
+			log.Print(line)
+			break
+		}
+		if err != nil {
+			log.Print(line)
+			break
+		}
+		data := strings.Split(line, ";")
+		id := data[0]
+
+		accountID, err := strconv.Atoi(data[1])
+		if err != nil {
+			log.Println("can't parse str to int")
+			return err
+		}
+
+		amount, err := strconv.Atoi(data[2])
+		if err != nil {
+			log.Println("can't parse str to int")
+			return err
+		}
+
+		name := data[3]
+
+		category := types.PaymentCategory(data[4])
+
+		favorite, err := s.FindFavoriteByID(id)
+		if err != nil {
+			newFavorite := &types.Favorite{
+				ID:        id,
+				AccountID: int64(accountID),
+				Name:      name,
+				Amount:    types.Money(amount),
+				Category:  types.PaymentCategory(category),
+			}
+
+			s.favorites = append(s.favorites, newFavorite)
+		} else {
+			favorite.AccountID = int64(accountID)
+			favorite.Name = name
+			favorite.Amount = types.Money(amount)
+			favorite.Category = category
+		}
+	}
+
+	return nil
+}
+
+//WriteToFile
+func WriteToFile(path string, data string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			log.Print(err)
+			return
+		}
+	}()
+	// он возвращает кол-во байтов
+
+	_, err = file.WriteString(data)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	return nil
 }

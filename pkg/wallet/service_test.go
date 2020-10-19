@@ -237,3 +237,55 @@ func TestService_FindFavoriteByID_succes(t *testing.T) {
 		t.Errorf("PayFromFavorite() Error() can't for an favorite(%v), error = %v", paymentFavorite, err)
 	}
 }
+
+func TestService_Export_success(t *testing.T) {
+	s := newTestService()
+
+	_, payments, err := s.addAcoount(defaultTestAccount)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	_, payments, err = s.addAcoount(testAccount{
+		phone:   "+992935444994",
+		balance: 10_000_00,
+		payments: []struct {
+			amount   types.Money
+			category types.PaymentCategory
+		}{{
+			amount:   1000_00,
+			category: "auto",
+		}},
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	payment := payments[0]
+	favorite, err := s.FavoritePayment(payment.ID, "ogastus")
+	if err != nil {
+		t.Errorf("cant find favorite, error = %v", err)
+	}
+
+	paymentFavorite, err := s.PayFromFavorite(favorite.ID)
+	if err != nil {
+		t.Errorf("PayFromFavorite() can't for an favorite(%v), error = %v", paymentFavorite, err)
+	}
+
+	err = s.Export("../../data")
+	if err != nil {
+		t.Errorf("Export() Error can't export error = %v", err)
+	}
+}
+
+func TestService_Import_success(t *testing.T) {
+	s := newTestService()
+
+	err := s.Import("../../data")
+
+	if err != nil {
+		t.Errorf("Import() Error can't import error = %v", err)
+	}
+}
