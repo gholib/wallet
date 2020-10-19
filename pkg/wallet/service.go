@@ -615,6 +615,9 @@ func (s *Service) ExportAccountHistory(accountID int64) ([]types.Payment, error)
 }
 
 func (s *Service) HistoryToFiles(payments []types.Payment, dir string, records int) error {
+	if len(payments) == 0 {
+		return nil
+	}
 	if len(payments) <= records {
 		exportPayments(payments, dir+"/payments.dump")
 		return nil
