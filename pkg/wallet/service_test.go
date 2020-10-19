@@ -274,7 +274,7 @@ func TestService_Export_success(t *testing.T) {
 		t.Errorf("PayFromFavorite() can't for an favorite(%v), error = %v", paymentFavorite, err)
 	}
 
-	err = s.Export("../../data")
+	err = s.Export("data")
 	if err != nil {
 		t.Errorf("Export() Error can't export error = %v", err)
 	}
@@ -283,7 +283,7 @@ func TestService_Export_success(t *testing.T) {
 func TestService_Import_success(t *testing.T) {
 	s := newTestService()
 
-	err := s.Import("../../data")
+	err := s.Import("data")
 
 	if err != nil {
 		t.Errorf("Import() Error can't import error = %v", err)

@@ -266,6 +266,12 @@ func (s *Service) Export(dir string) error {
 }
 
 func (s *Service) ExportAccounts(dir string) error {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
 	str := ""
 	for _, account := range s.accounts {
 		str += strconv.Itoa(int(account.ID)) + ";"
@@ -274,7 +280,7 @@ func (s *Service) ExportAccounts(dir string) error {
 		str += string('\n')
 	}
 
-	err := WriteToFile(dir+"/accounts.dump", str)
+	err = ioutil.WriteFile(wd+"/"+"data/accounts.dump", []byte(str), 0666)
 	if err != nil {
 		log.Print(err)
 		return err
@@ -284,6 +290,11 @@ func (s *Service) ExportAccounts(dir string) error {
 }
 
 func (s *Service) ExportPayments(dir string) error {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
 	str := ""
 	for _, payment := range s.payments {
 		str += payment.ID + ";"
@@ -294,7 +305,7 @@ func (s *Service) ExportPayments(dir string) error {
 		str += string('\n')
 	}
 
-	err := WriteToFile(dir+"/payments.dump", str)
+	err = ioutil.WriteFile(wd+"/"+"data/payments.dump", []byte(str), 0666)
 	if err != nil {
 		log.Print(err)
 		return err
@@ -304,6 +315,11 @@ func (s *Service) ExportPayments(dir string) error {
 }
 
 func (s *Service) ExportFavorites(dir string) error {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
 	str := ""
 	for _, favorite := range s.favorites {
 		str += favorite.ID + ";"
@@ -314,7 +330,7 @@ func (s *Service) ExportFavorites(dir string) error {
 		str += string('\n')
 	}
 
-	err := WriteToFile(dir+"/favorites.dump", str)
+	err = ioutil.WriteFile(wd+"/"+"data/favorites.dump", []byte(str), 0666)
 	if err != nil {
 		log.Print(err)
 		return err
@@ -324,19 +340,19 @@ func (s *Service) ExportFavorites(dir string) error {
 }
 
 func (s *Service) Import(dir string) error {
-	err := s.ImportAccounts(dir + "/accounts.dump")
+	err := s.ImportAccounts("data/accounts.dump")
 	log.Println(s.accounts)
 	if err != nil {
 		return err
 	}
 
-	err = s.ImportPayments(dir + "/payments.dump")
+	err = s.ImportPayments("data/payments.dump")
 	log.Println(s.payments)
 	if err != nil {
 		return err
 	}
 
-	err = s.ImportFavorites(dir + "/favorites.dump")
+	err = s.ImportFavorites("data/favorites.dump")
 	log.Println(s.favorites)
 	if err != nil {
 		return err
@@ -346,7 +362,12 @@ func (s *Service) Import(dir string) error {
 }
 
 func (s *Service) ImportAccounts(path string) error {
-	byteData, err := ioutil.ReadFile(path)
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	byteData, err := ioutil.ReadFile(wd + "/" + path)
 	if err != nil {
 		log.Print(err)
 		return err
@@ -394,7 +415,12 @@ func (s *Service) ImportAccounts(path string) error {
 }
 
 func (s *Service) ImportPayments(path string) error {
-	byteData, err := ioutil.ReadFile(path)
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	byteData, err := ioutil.ReadFile(wd + "/" + path)
 	if err != nil {
 		log.Print(err)
 		return err
@@ -449,7 +475,12 @@ func (s *Service) ImportPayments(path string) error {
 }
 
 func (s *Service) ImportFavorites(path string) error {
-	byteData, err := ioutil.ReadFile(path)
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	byteData, err := ioutil.ReadFile(wd + "/" + path)
 	if err != nil {
 		log.Print(err)
 		return err
@@ -496,30 +527,6 @@ func (s *Service) ImportFavorites(path string) error {
 			favorite.Amount = types.Money(amount)
 			favorite.Category = category
 		}
-	}
-	return nil
-}
-
-//WriteToFile
-func WriteToFile(path string, data string) error {
-	file, err := os.Create(path)
-	if err != nil {
-		log.Print(err)
-		return err
-	}
-	defer func() {
-		err = file.Close()
-		if err != nil {
-			log.Print(err)
-			return
-		}
-	}()
-	// он возвращает кол-во байтов
-
-	_, err = file.WriteString(data)
-	if err != nil {
-		log.Print(err)
-		return err
 	}
 	return nil
 }
