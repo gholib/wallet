@@ -1,9 +1,7 @@
 package wallet
 
 import (
-	"bufio"
 	"errors"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -348,31 +346,20 @@ func (s *Service) Import(dir string) error {
 }
 
 func (s *Service) ImportAccounts(path string) error {
-
-	src, err := os.Open(path)
+	byteData, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Print(err)
 		return err
 	}
+	datas := string(byteData)
+	splits := strings.Split(datas, "\n")
 
-	defer func() {
-		if cerr := src.Close(); cerr != nil {
-			log.Print(cerr)
-		}
-	}()
-	reader := bufio.NewReader(src)
-	for {
-		line, err := reader.ReadString('\n')
-		if err == io.EOF {
-			log.Print(line)
-			break
-		}
-		if err != nil {
-			log.Print(line)
+	for _, split := range splits {
+		if len(split) == 0 {
 			break
 		}
 
-		data := strings.Split(line, ";")
+		data := strings.Split(split, ";")
 
 		id, err := strconv.Atoi(data[0])
 		if err != nil {
@@ -407,30 +394,20 @@ func (s *Service) ImportAccounts(path string) error {
 }
 
 func (s *Service) ImportPayments(path string) error {
-	src, err := os.Open(path)
+	byteData, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Print(err)
 		return err
 	}
+	datas := string(byteData)
+	splits := strings.Split(datas, "\n")
 
-	defer func() {
-		if cerr := src.Close(); cerr != nil {
-			log.Print(cerr)
-		}
-	}()
-	reader := bufio.NewReader(src)
-	for {
-		line, err := reader.ReadString('\n')
-		if err == io.EOF {
-			log.Print(line)
-			break
-		}
-		if err != nil {
-			log.Print(line)
+	for _, split := range splits {
+		if len(split) == 0 {
 			break
 		}
 
-		data := strings.Split(line, ";")
+		data := strings.Split(split, ";")
 		id := data[0]
 
 		accountID, err := strconv.Atoi(data[1])
@@ -472,29 +449,20 @@ func (s *Service) ImportPayments(path string) error {
 }
 
 func (s *Service) ImportFavorites(path string) error {
-	src, err := os.Open(path)
+	byteData, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Print(err)
 		return err
 	}
+	datas := string(byteData)
+	splits := strings.Split(datas, "\n")
 
-	defer func() {
-		if cerr := src.Close(); cerr != nil {
-			log.Print(cerr)
-		}
-	}()
-	reader := bufio.NewReader(src)
-	for {
-		line, err := reader.ReadString('\n')
-		if err == io.EOF {
-			log.Print(line)
+	for _, split := range splits {
+		if len(split) == 0 {
 			break
 		}
-		if err != nil {
-			log.Print(line)
-			break
-		}
-		data := strings.Split(line, ";")
+
+		data := strings.Split(split, ";")
 		id := data[0]
 
 		accountID, err := strconv.Atoi(data[1])
@@ -508,9 +476,7 @@ func (s *Service) ImportFavorites(path string) error {
 			log.Println("can't parse str to int")
 			return err
 		}
-
 		name := data[3]
-
 		category := types.PaymentCategory(data[4])
 
 		favorite, err := s.FindFavoriteByID(id)
@@ -531,7 +497,6 @@ func (s *Service) ImportFavorites(path string) error {
 			favorite.Category = category
 		}
 	}
-
 	return nil
 }
 
